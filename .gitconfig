@@ -1,0 +1,10 @@
+[filter "lfs"]
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
+[user]
+	name = Alberto Garcia
+	email = alberto.gf182@gmail.com
+[push]
+	default = main
