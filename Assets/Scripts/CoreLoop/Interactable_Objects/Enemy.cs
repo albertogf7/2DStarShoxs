@@ -17,6 +17,7 @@ public class Enemy : MonoBehaviour
 
     private float _fireRate = 3.0f;
     private float _canFire = -1;
+    private bool _shootingOn;
     [SerializeField]
     private GameObject _enemyLasers;
 
@@ -46,13 +47,17 @@ public class Enemy : MonoBehaviour
         {
             _enemyaudioSource.clip = _explosionSound;
         }
+        _shootingOn = true;
 
     }
     void Update()
     {
         CalculateMovement();
-
-        if(Time.time > _canFire)
+        ShootingLoop();
+    }
+    void ShootingLoop()
+    {
+        if (Time.time > _canFire && _shootingOn)
         {
             _fireRate = Random.Range(3f, 7f);
             _canFire = Time.time + _fireRate;
@@ -65,7 +70,6 @@ public class Enemy : MonoBehaviour
             }
 
         }
-
     }
 
     void CalculateMovement()
@@ -94,11 +98,12 @@ public class Enemy : MonoBehaviour
             _animator.SetTrigger("OnEnemyDeath");
             _speed= 0;
             _enemyaudioSource.Play();
+            _shootingOn = false;
             Destroy(this.gameObject, 2f);  
         }
         else if (other.tag == "Laser")
         {
-            Destroy(other.gameObject);
+            other.gameObject.SetActive(false);
             if (_player != null)
             {
                 Destroy(_thisCollider);
@@ -106,9 +111,22 @@ public class Enemy : MonoBehaviour
                 _animator.SetTrigger("OnEnemyDeath");
                 _speed = _speed / 3;
                 _enemyaudioSource.Play();
+                _shootingOn = false;
                 Destroy(this.gameObject, 2f);
-               
             }  
+        }
+        else if (other.tag == "Blaston")
+        {
+            if (_player != null)
+            {
+                Destroy(_thisCollider);
+                _player.AddDestroyed(2);
+                _animator.SetTrigger("OnEnemyDeath");
+                _speed = _speed / 3;
+                _enemyaudioSource.Play();
+                _shootingOn = false;
+                Destroy(this.gameObject, 2f);
+            }
         }
     }
 }

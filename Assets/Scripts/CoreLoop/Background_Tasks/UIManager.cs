@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using UnityEngine.SceneManagement;
 
 
 public class UIManager : MonoBehaviour
@@ -37,7 +36,7 @@ public class UIManager : MonoBehaviour
 
     public void UpdateLives(int currentLives)
     {
-        _livesImg.sprite = _livesSprites[currentLives];
+         _livesImg.sprite = _livesSprites[currentLives];        
     }
 
     public void GameOver()

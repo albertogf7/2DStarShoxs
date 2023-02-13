@@ -9,8 +9,6 @@ public class Asteroid : MonoBehaviour
 
     [SerializeField]
     private GameObject _explosionFire;
-    private SpriteRenderer _asteroidSprite;
-
     private SpawnManager _spawnManager;
 
     private void Start()
@@ -25,7 +23,6 @@ public class Asteroid : MonoBehaviour
     }
     private void OnTriggerEnter2D(Collider2D other)
     {
-        _asteroidSprite = GetComponent<SpriteRenderer>();
         if (other.tag == "Player")
         {
             Player player = other.transform.GetComponent<Player>();
@@ -39,10 +36,10 @@ public class Asteroid : MonoBehaviour
         }
         else if (other.tag == "Laser")
         {
-            Destroy(other.gameObject);
+            other.gameObject.SetActive(false);
             if (other != null)
             {
-                Destroy(other.gameObject);
+                other.gameObject.SetActive(false);
                 _spawnManager.StartSpawning();
                 Instantiate(_explosionFire, transform.position, Quaternion.identity);
                 Destroy(this.gameObject, 0.45f);

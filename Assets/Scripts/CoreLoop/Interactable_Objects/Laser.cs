@@ -30,9 +30,9 @@ public class Laser : MonoBehaviour
         {
             if (transform.parent != null)
             {
-                Destroy(transform.parent.gameObject);
+                transform.parent.gameObject.SetActive(false);
             }
-            Destroy(this.gameObject);
+           gameObject.SetActive(false);
         }
     }
 

@@ -12,6 +12,10 @@ public class SpawnManager : MonoBehaviour
     private GameObject _tripleShotPowerUpPrefab;
     [SerializeField]
     private GameObject[] powerups;
+    [SerializeField]
+    private GameObject _ammoPrefab;
+    [SerializeField]
+    private GameObject _healthPackPrefab;
 
     private bool _stopSpawning = false;
 
@@ -24,6 +28,8 @@ public class SpawnManager : MonoBehaviour
     {
         StartCoroutine(SpawnRoutine());
         StartCoroutine(SpawnPowerUpRoutine());
+        StartCoroutine(SpawnAmmoRoutine());
+        StartCoroutine(SpawnHealthPackRoutine());
     }
     IEnumerator SpawnRoutine()
     {
@@ -39,12 +45,34 @@ public class SpawnManager : MonoBehaviour
     IEnumerator SpawnPowerUpRoutine()
     {
         yield return new WaitForSeconds(5.0f);
-        float spawnRandomTime = Random.Range(10.0f, 15.0f);
         while (_stopSpawning == false)
         {
+            float spawnRandomTime = Random.Range(10.0f, 15.0f);
             Vector3 posToSpawn = new Vector3(Random.Range(-7f, 7f), 7, 0);
             int randomPowerUp = Random.Range(0, powerups.Length);
             Instantiate(powerups[randomPowerUp], posToSpawn, Quaternion.identity);
+            yield return new WaitForSeconds(spawnRandomTime);
+        }
+    }
+    IEnumerator SpawnAmmoRoutine()
+    {
+        yield return new WaitForSeconds(10.0f);
+        while (_stopSpawning == false)
+        {
+            float spawnRandomTime = Random.Range(10.0f, 20.0f);
+            Vector3 posToSpawn = new Vector3(Random.Range(-7f, 7f), 7, 0);
+            Instantiate(_ammoPrefab, posToSpawn, Quaternion.identity);
+            yield return new WaitForSeconds(spawnRandomTime);
+        }
+    }
+    IEnumerator SpawnHealthPackRoutine()
+    {
+        yield return new WaitForSeconds(10.0f);
+        while (_stopSpawning == false)
+        {
+            float spawnRandomTime = Random.Range(20.0f, 30.0f);
+            Vector3 posToSpawn = new Vector3(Random.Range(-7f, 7f), 7, 0);
+            Instantiate(_healthPackPrefab, posToSpawn, Quaternion.identity);
             yield return new WaitForSeconds(spawnRandomTime);
         }
     }

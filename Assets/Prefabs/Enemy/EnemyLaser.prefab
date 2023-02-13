@@ -100,6 +100,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Laser Left
       objectReference: {fileID: 0}
+    - target: {fileID: 5685326317719745324, guid: fdc87981d26adfd48b11a8dae8acdb48, type: 3}
+      propertyPath: m_TagString
+      value: Enemy Laser
+      objectReference: {fileID: 0}
+    - target: {fileID: 7462300372785590934, guid: fdc87981d26adfd48b11a8dae8acdb48, type: 3}
+      propertyPath: _isEnemyLaser
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fdc87981d26adfd48b11a8dae8acdb48, type: 3}
 --- !u!4 &2691570590298474066 stripped
@@ -173,6 +181,14 @@ PrefabInstance:
     - target: {fileID: 5685326317719745324, guid: fdc87981d26adfd48b11a8dae8acdb48, type: 3}
       propertyPath: m_Name
       value: Laser Right
+      objectReference: {fileID: 0}
+    - target: {fileID: 5685326317719745324, guid: fdc87981d26adfd48b11a8dae8acdb48, type: 3}
+      propertyPath: m_TagString
+      value: Enemy Laser
+      objectReference: {fileID: 0}
+    - target: {fileID: 7462300372785590934, guid: fdc87981d26adfd48b11a8dae8acdb48, type: 3}
+      propertyPath: _isEnemyLaser
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fdc87981d26adfd48b11a8dae8acdb48, type: 3}
