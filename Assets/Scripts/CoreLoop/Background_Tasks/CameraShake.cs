@@ -5,8 +5,9 @@ using UnityEngine;
 public class CameraShake : MonoBehaviour
 {
     #region variables
+    //serialize and privatize 
     public bool camShakeActive;
-    [Range(0, 1)] public float trauma;
+    [Range(0, 1)] private float _trauma;
     private float _timeCounter;
     public float traumaMult = 5f;
     [SerializeField] 
@@ -14,7 +15,6 @@ public class CameraShake : MonoBehaviour
     [SerializeField]
     private float _traumaRotMag = 1.7f;
     public float traumaDecay = 1.3f;
-
     #endregion
 
     #region accessors
@@ -22,11 +22,11 @@ public class CameraShake : MonoBehaviour
     {
         get 
         { 
-            return trauma; 
+            return _trauma; 
         }
         set
         { 
-            trauma = Mathf.Clamp01(value); 
+            _trauma = Mathf.Clamp01(value); 
         }
     }
 
@@ -49,13 +49,13 @@ public class CameraShake : MonoBehaviour
 
     void CamShake()
     {
-        if (camShakeActive && trauma > 0)
+        if (camShakeActive && _trauma > 0)
         {
             _timeCounter += Time.deltaTime * Mathf.Pow(Trauma, 0.3f) * traumaMult;
-            Vector3 newPos = GetVec3() * _traumaMag * trauma;
+            Vector3 newPos = GetVec3() * _traumaMag * _trauma;
             transform.localPosition = newPos;
             transform.localRotation = Quaternion.Euler(newPos * _traumaRotMag);
-            trauma -= Time.deltaTime * traumaDecay * Trauma;
+            _trauma -= Time.deltaTime * traumaDecay * Trauma;
         }
         else
         {
@@ -63,6 +63,12 @@ public class CameraShake : MonoBehaviour
             transform.localPosition = newPos;
             transform.localRotation = Quaternion.Euler(newPos * _traumaRotMag);
         }
+    }
+    public void ShakeSetUp(float mult, float decay, float trauma)
+    {
+        traumaMult = mult;
+        traumaDecay = decay;
+        _trauma = trauma;
     }
 
     private void Update()

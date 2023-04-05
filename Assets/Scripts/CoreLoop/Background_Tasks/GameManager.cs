@@ -25,4 +25,8 @@ public class GameManager : MonoBehaviour
     {
         _isGameOver = true;
     }
+    public void BossDefeated()
+    {
+        SceneManager.LoadScene(0);
+    }
 }

@@ -11,9 +11,25 @@ public class Collectables : MonoBehaviour
     [SerializeField]
     private AudioClip _powerUpClip;
 
+    private Transform _playerTransform;
+    [SerializeField]
+    private bool _magnetFound = false;
+
+    private void Start()
+    {
+        _playerTransform = GameObject.Find("Player").GetComponent<Transform>();
+    }
+
     void Update()
     {
-        transform.Translate(Vector3.down * _speed * Time.deltaTime);
+        if (!_magnetFound)
+        {
+            transform.Translate(Vector3.down * _speed * Time.deltaTime);
+        }
+        else if(_magnetFound)
+        {
+            MoveTowardsPlayer();
+        }
 
         if (transform.position.y < -6.5)
         {
@@ -42,5 +58,13 @@ public class Collectables : MonoBehaviour
             }
             Destroy(this.gameObject);
         }
+        else if (other.tag == "PlayerMagnet")
+        {
+            _magnetFound = true;
+        }
+    }
+    void MoveTowardsPlayer()
+    {
+        transform.position = Vector3.Lerp(this.transform.position, _playerTransform.transform.position, 2f * Time.deltaTime);
     }
 }

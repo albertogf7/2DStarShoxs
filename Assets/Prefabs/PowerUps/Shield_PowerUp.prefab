@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 9199190463213967593}
   m_Layer: 0
   m_Name: Shield_PowerUp
-  m_TagString: Untagged
+  m_TagString: Item
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -147,9 +147,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1349cbbcd138aad43bd4aa3f75b7129a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _speed: 8
+  _speed: 7
   powerUpID: 2
   _powerUpClip: {fileID: 8300000, guid: 5ee343246919d2b4bba63ae629e95494, type: 3}
+  _explosionClip: {fileID: 8300000, guid: a885c043fab7e46438bba03ba9dab6bc, type: 3}
 --- !u!95 &9199190463213967593
 Animator:
   serializedVersion: 4

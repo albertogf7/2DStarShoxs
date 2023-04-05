@@ -10,10 +10,27 @@ public class PowerUps : MonoBehaviour
     private int powerUpID;
     [SerializeField]
     private AudioClip _powerUpClip;
+    [SerializeField]
+    private AudioClip _explosionClip;
 
+    private Transform _playerTransform;
+    [SerializeField]
+    private bool _magnetFound = false;
+
+    private void Start()
+    {
+        _playerTransform = GameObject.Find("Player").GetComponent<Transform>();
+    }
     void Update()
     {
-        transform.Translate(Vector3.down * _speed * Time.deltaTime);
+        if (!_magnetFound)
+        {
+            transform.Translate(Vector3.down * _speed * Time.deltaTime);
+        }
+        else if (_magnetFound) 
+        {
+            MoveTowardsPlayer();
+        }
 
         if (transform.position.y < -6.5)
         {
@@ -41,9 +58,33 @@ public class PowerUps : MonoBehaviour
                     case 2:
                         player.ActivateShield();
                         break;
+                    case 3:
+                        player.SlowDown();
+                        break;
+                    case 4:
+                        player.ActivateHomingMissile();
+                        break;
                 }
             }
             Destroy(this.gameObject);
         }
+        else if (other.tag == "Enemy Laser")
+        {
+            AudioSource.PlayClipAtPoint(_explosionClip, transform.position);
+            Destroy(this.gameObject);
+        }
+        else if (other.tag == "PlayerMagnet")
+        {
+            _magnetFound = true;
+        }
+        else
+        {
+            _magnetFound = false;
+        }
+    }
+
+    void MoveTowardsPlayer()
+    {
+        transform.position = Vector3.Lerp(this.transform.position, _playerTransform.transform.position, 1.5f * Time.deltaTime);
     }
 }

@@ -6,12 +6,12 @@ using UnityEngine.UI;
 
 public class Player : MonoBehaviour
 {
-    [SerializeField] private TMP_Text _scoreText;
+    #region variable handlers
     private SpawnManager _spawnManager;
 
     [SerializeField]
     private int _currentHealth;
-    [SerializeField] 
+    [SerializeField]
     private int _destroyed;
 
     [SerializeField]
@@ -35,6 +35,10 @@ public class Player : MonoBehaviour
     [SerializeField]
     private bool _blastonOnCD;
     private WaitForSeconds _blastonRegen = new WaitForSeconds(10);
+    [SerializeField]
+    private GameObject _homingMissile;
+    private bool _homingIsReady = false;
+    private HomingMissile _homingScript;
 
     [SerializeField]
     private bool _BoostEnabled = false;
@@ -49,24 +53,21 @@ public class Player : MonoBehaviour
     private int _shieldHealth = 3;
 
     [SerializeField]
-    private Slider _thrusterCDSlider;
-    [SerializeField]
     private float _thrusterFillDelaySeconds = 0.5f;
-    [SerializeField]
-    private float _thrusterCDDelay = 0.3f;
-    private WaitForSeconds _thrusterRegen = new WaitForSeconds(5);
+    private float _thrusterRegen = 5.0f;
     [SerializeField]
     private float _thrusterUsedTime;
     [SerializeField]
     private bool _thrusterIsCharging;
     [SerializeField]
     private bool _thrusterIsBoosting;
+    private float _thrusterCDfloat;
     [SerializeField]
     private GameObject _thrusterFire;
     [SerializeField]
-    private GameObject _wFR;
+    private GameObject _wingFlareR;
     [SerializeField]
-    private GameObject _wFL;
+    private GameObject _wingFlareL;
     [SerializeField]
     private GameObject _explosionFire;
 
@@ -81,7 +82,7 @@ public class Player : MonoBehaviour
     private AudioClip _powerUpClip;
     private AudioSource _audioSource;
 
-    public int maxAmmo = 15;
+    private int _maxAmmo = 20;
     [SerializeField]
     private int _currentAmmo;
     private bool _isAmmoReady = true;
@@ -93,7 +94,13 @@ public class Player : MonoBehaviour
     [SerializeField]
     private CameraShake _camShaker;
 
+    [SerializeField]
+    private GameObject _magneticCollider;
+    private bool _magnetOnCD = false;
 
+    #endregion
+
+    #region Awake, Start, Update
     void Awake()
     {
         transform.position = new Vector3(0, 0, 0);
@@ -101,16 +108,14 @@ public class Player : MonoBehaviour
         _laserCanFire = true;
         _thrusterIsCharging = false;
         _thrusterIsBoosting = false;
-        _thrusterCDSlider.value = 0;
         _thrusterUsedTime = 0;
         _thrusterFillDelaySeconds = 0.5f;
-        _thrusterCDDelay = 0.2f;
         _speedMultiplier = 1.85f;
         _thrusterFire.gameObject.SetActive(false);
         _currentHealth = 3;
-
+        _magneticCollider.gameObject.SetActive(false);
     }
-
+    
     private void Start()
     {
         _spawnManager = GameObject.Find("SpawnManager").GetComponent<SpawnManager>();
@@ -119,13 +124,13 @@ public class Player : MonoBehaviour
             Debug.LogError("The Spawn Manager is NULL");
         }
 
-        _uiManager = GameObject.Find("Canvas").GetComponent<UIManager>();
+        _uiManager = GameObject.Find("Canvass").GetComponent<UIManager>();
         if (_uiManager == null)
         {
-            Debug.LogError("UI is null");
+            Debug.Log("UI is null");
         }
-        _wFL.SetActive(false);
-        _wFR.SetActive(false);
+        _wingFlareL.SetActive(false);
+        _wingFlareR.SetActive(false);
 
         _audioSource = GetComponent<AudioSource>();
         if (_audioSource == null)
@@ -150,9 +155,19 @@ public class Player : MonoBehaviour
         {
             Debug.LogError("No Cam Holder");
         }
+        
+        _homingScript = GetComponentInChildren<HomingMissile>();
+        if (_homingScript == null)
+        {
+            Debug.LogError("No homing script");
+        }
+
+        _homingMissile.gameObject.SetActive(false);
+
         _camShaker.camShakeActive = true;
 
-        _currentAmmo = maxAmmo;
+        _currentAmmo = _maxAmmo;
+        _uiManager.AmmoDisplay(_currentAmmo, _maxAmmo);
     }
 
     void Update()
@@ -161,8 +176,12 @@ public class Player : MonoBehaviour
         ShootLaser();
         ChargeBlaston();
         ManualThruster();
+        MagneticFieldOn();
+        CheckPP();
     }
+    #endregion
 
+    #region Movement
     void CalculateMovement()
     {
         float horizontalInput = Input.GetAxis("Horizontal");
@@ -185,7 +204,6 @@ public class Player : MonoBehaviour
     }
     void ManualThruster()
     {
-        //boost
         if (Input.GetKey(KeyCode.LeftShift) && !_thrusterIsCharging)
         {
             if (_thrusterIsBoosting == false)
@@ -194,41 +212,54 @@ public class Player : MonoBehaviour
                 _speed *= _speedMultiplier;
                 _thrusterIsBoosting = true;
             }
-            if (_thrusterIsBoosting == true)
+            else
             {
                 _thrusterUsedTime += Time.deltaTime * _thrusterFillDelaySeconds;
-                _thrusterCDSlider.value = _thrusterUsedTime;
-                if (_thrusterCDSlider.value >= 1)
+                _uiManager.thrusterSlider.value = _thrusterUsedTime;
+                if (_thrusterUsedTime >= 1)          
                 {
                     _thrusterFire.SetActive(false);
                     _speed /= _speedMultiplier;
                     StartCoroutine(ThrusterCoolDown());
+
                 }
-            }  
+            }
         }
-            if (Input.GetKeyUp(KeyCode.LeftShift) && _thrusterIsBoosting)
+        if (Input.GetKeyUp(KeyCode.LeftShift) && _thrusterIsBoosting)
         {
             _thrusterFire.SetActive(false);
             _speed /= _speedMultiplier;
             _thrusterIsBoosting = false;
         }
-        if (_thrusterIsCharging)
-        {
-            _thrusterCDSlider.value -= Time.deltaTime * _thrusterCDDelay;
-        }
     }
 
-   private IEnumerator ThrusterCoolDown()
+    private IEnumerator ThrusterCoolDown()
     {
         _thrusterIsBoosting = false;
         _thrusterIsCharging = true;
-        yield return _thrusterRegen;
+        _thrusterCDfloat = 5f;
+
+        while (_thrusterCDfloat >= 0)
+        {
+            _thrusterCDfloat -= Time.deltaTime;
+            _uiManager.thrusterSlider.value = _thrusterCDfloat / _thrusterRegen;
+            yield return new WaitForEndOfFrame();
+        }
         _thrusterIsCharging = false;
-        _thrusterCDSlider.value = 0;
+        _uiManager.thrusterSlider.value = 0;
         _thrusterUsedTime = 0;
     }
 
-    //Start Weapon System
+    private void CheckPP()
+    {
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            _uiManager.PauseGame();
+        }
+    }
+    #endregion
+
+    #region Weapon System
     void ShootLaser()
     {
         if (Input.GetKeyDown(KeyCode.Space) && _blastonIsCharging)
@@ -244,7 +275,7 @@ public class Player : MonoBehaviour
         }
         else if (Input.GetKeyDown(KeyCode.Space) && _laserCanFire && _isAmmoReady)
         {
-            if(_currentAmmo == 15)
+            if (_currentAmmo == 15)
             {
                 _ammoIndicatorRenderer.color = Color.green;
             }
@@ -256,6 +287,7 @@ public class Player : MonoBehaviour
                 bullet.SetActive(true);
             }
             _currentAmmo--;
+            _uiManager.AmmoDisplay(_currentAmmo, _maxAmmo);
             _audioSource.Play();
             _laserCanFire = false;
             StartCoroutine(LaserDelay());
@@ -267,20 +299,33 @@ public class Player : MonoBehaviour
             {
                 _ammoIndicatorRenderer.color = Color.red;
             }
-            else if(_currentAmmo == 0)
+            else if (_currentAmmo == 0)
             {
                 _isAmmoReady = false;
                 _ammoIndicator.SetActive(false);
 
             }
         }
+
+        if (Input.GetKeyDown(KeyCode.E) && _homingIsReady)
+        {
+            _homingScript.ActivateSeeking();
+            _homingIsReady = false;
+            Debug.Log("homing shot");
+        }
+    }
+    public void AddMaxAmmo()
+    {
+        _maxAmmo += 7;
+        _uiManager.AmmoDisplay(_currentAmmo, _maxAmmo);
     }
     public void ReloadAmmo()
     {
-        _currentAmmo = maxAmmo;
+        _currentAmmo = _maxAmmo;
         _ammoIndicatorRenderer.color = Color.green;
         _ammoIndicator.SetActive(true);
         _isAmmoReady = true;
+        _uiManager.AmmoDisplay(_currentAmmo, _maxAmmo);
     }
     IEnumerator LaserDelay()
     {
@@ -290,10 +335,10 @@ public class Player : MonoBehaviour
 
     void ChargeBlaston()
     {
-        if(Input.GetKey(KeyCode.S) && _blastonChargeTime < 2 && !_blastonOnCD)
+        if (Input.GetKey(KeyCode.S) && _blastonChargeTime < 2 && !_blastonOnCD)
         {
             _blastonIsCharging = true;
-            if(_blastonIsCharging == true)
+            if (_blastonIsCharging == true)
             {
                 _blastonChargeTime += Time.deltaTime * _blastonChargeSpeed;
             }
@@ -321,22 +366,23 @@ public class Player : MonoBehaviour
         yield return _blastonRegen;
         _blastonOnCD = false;
     }
+    #endregion
 
-    //End of Weapon System
+    #region HealthManager
     public void Heal()
     {
-        if(_currentHealth != 3)
+        if (_currentHealth != 3)
         {
             _currentHealth++;
             _uiManager.UpdateLives(_currentHealth);
         }
-        if(_currentHealth == 2)
+        if (_currentHealth == 2)
         {
-            _wFL.SetActive(false);
+            _wingFlareL.SetActive(false);
         }
-        else if( _currentHealth == 3) 
+        else if (_currentHealth == 3)
         {
-            _wFR.SetActive(false);
+            _wingFlareR.SetActive(false);
         }
     }
     public void Damage()
@@ -363,31 +409,27 @@ public class Player : MonoBehaviour
         }
         else if (_ShieldEnabled == false)
         {
-            _currentHealth --;
-            _uiManager.UpdateLives(_currentHealth);
-            
+            _currentHealth--;
+            if (_currentHealth >= 0)
+            {
+                _uiManager.UpdateLives(_currentHealth);
+            }
 
             if (_currentHealth == 2)
             {
-                _wFR.SetActive(true);
-                _camShaker.traumaMult = 5f;
-                _camShaker.traumaDecay = 1.3f;
-                _camShaker.trauma = 0.5f;
+                _wingFlareR.SetActive(true);
+                _camShaker.ShakeSetUp(5f, 1.3f, 0.5f);
             }
 
             if (_currentHealth == 1)
             {
-                _wFL.SetActive(true);
-                _camShaker.traumaMult = 6.5f;
-                _camShaker.traumaDecay = 0.8f;
-                _camShaker.trauma = 0.75f;
+                _wingFlareL.SetActive(true);
+                _camShaker.ShakeSetUp(6.5f, 0.8f, 0.75f);
             }
 
-            if (_currentHealth < 1)
+            if (_currentHealth == 0)
             {
-                _camShaker.traumaMult = 8f;
-                _camShaker.traumaDecay = 0.5f;
-                _camShaker.trauma = 1f;
+                _camShaker.ShakeSetUp(8f, 0.5f, 1f);
                 _spawnManager.OnPlayerDeath();
                 _gameManager.GameOver();
                 _uiManager.GameOver();
@@ -396,13 +438,13 @@ public class Player : MonoBehaviour
                 _audioSource.pitch = 0.8f;
                 _audioSource.volume = 1f;
                 _audioSource.Play();
-                Destroy(this.gameObject);
+                this.gameObject.SetActive(false);
             }
         }
     }
+    #endregion
 
-
-    //PowerUps
+    #region PowerUps
     public void ActivateShield()
     {
         _ShieldEnabled = true;
@@ -461,12 +503,53 @@ public class Player : MonoBehaviour
             _thrusterFire.SetActive(false);
         }
     }
-
-    public void AddDestroyed(int points)
+    
+    public void SlowDown()
     {
-        _destroyed += points;
-        _uiManager.NewTakedown(_destroyed); 
+        StartCoroutine(SlowedDown());
     }
+    IEnumerator SlowedDown()
+    {
+        _speed /= 10;
+        yield return new WaitForSeconds(6.0f);
+        _speed = 7.5f;
+    }
+
+    void MagneticFieldOn()
+    {
+        if (Input.GetKey(KeyCode.C) && !_magnetOnCD)
+        {
+            _magneticCollider.gameObject.SetActive(true);
+        }
+        else if (Input.GetKeyUp(KeyCode.C) && !_magnetOnCD)
+        {
+            _magnetOnCD = true;
+            StartCoroutine(MagneticFieldDelay());
+        }
+    }
+    IEnumerator MagneticFieldDelay()
+    {
+        yield return new WaitForSeconds(1.0f);
+        _magneticCollider.SetActive(false);
+        yield return new WaitForSeconds(0.05f);
+        _magneticCollider.SetActive(true);
+        yield return new WaitForSeconds(0.6f);
+        _magneticCollider.SetActive(false);
+        yield return new WaitForSeconds(0.05f);
+        _magneticCollider.SetActive(true);
+        yield return new WaitForSeconds(0.2f);
+        _magneticCollider.SetActive(false);
+        _magnetOnCD = false;
+    }
+
+    public void ActivateHomingMissile()
+    {
+        _homingMissile.transform.SetParent(this.transform);
+        _homingMissile.transform.rotation = Quaternion.identity;
+        _homingMissile.gameObject.SetActive(true);
+        _homingIsReady = true;
+    }
+    #endregion
 }
 
 /* 

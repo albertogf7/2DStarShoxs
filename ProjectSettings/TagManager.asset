@@ -9,6 +9,11 @@ TagManager:
   - tripleUp
   - Blaston
   - Enemy Laser
+  - Item
+  - PlayerMagnet
+  - Sweeper
+  - Homing Missile
+  - RamSS
   layers:
   - Default
   - TransparentFX
